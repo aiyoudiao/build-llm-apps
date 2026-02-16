@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港疫情数据可视化大屏</title>
+    <!-- 引入 ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- 引入 Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            background-color: white;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .metric-card {
+            text-align: center;
+            padding: 20px;
+        }
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .chart-container {
+            height: 400px;
+            width: 100%;
+            padding: 15px;
+        }
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #3498db;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header text-center">
+        <h1>香港疫情数据可视化大屏</h1>
+        <p id="data-date" class="mb-0 text-light opacity-75">数据更新日期：加载中...</p>
+    </div>
+
+    <div class="container-fluid px-4">
+        <!-- 关键指标卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-label">累计确诊总数</div>
+                    <div class="metric-value text-primary" id="total-cumulative">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-label">现存确诊病例</div>
+                    <div class="metric-value text-warning" id="total-active">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-label">累计康复人数</div>
+                    <div class="metric-value text-success" id="total-recovered">-</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-label">累计死亡人数</div>
+                    <div class="metric-value text-danger" id="total-deaths">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="row">
+            <!-- 左上：全港新增确诊趋势 -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="chart-title">全港每日新增确诊趋势</div>
+                        <div id="trendChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右上：风险等级分布 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="chart-title">各区风险等级分布 (最新)</div>
+                        <div id="riskChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 香港地图 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="chart-title mb-0">香港各区疫情地图分布</div>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-primary active" onclick="updateMap('cumulative')">累计确诊</button>
+                                <button type="button" class="btn btn-outline-warning" onclick="updateMap('active')">现存确诊</button>
+                                <button type="button" class="btn btn-outline-success" onclick="updateMap('recovered')">累计康复</button>
+                                <button type="button" class="btn btn-outline-danger" onclick="updateMap('deaths')">累计死亡</button>
+                            </div>
+                        </div>
+                        <div id="mapChart" style="height: 600px; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 左下：各区累计确诊排行 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="chart-title">各区累计确诊排行 (Top 10)</div>
+                        <div id="districtBarChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右下：Top 5 地区新增趋势对比 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="chart-title">重点地区(Top 5)新增确诊趋势对比</div>
+                        <div id="top5TrendChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化图表实例
+        const trendChart = echarts.init(document.getElementById('trendChart'));
+        const riskChart = echarts.init(document.getElementById('riskChart'));
+        const districtBarChart = echarts.init(document.getElementById('districtBarChart'));
+        const top5TrendChart = echarts.init(document.getElementById('top5TrendChart'));
+        const mapChart = echarts.init(document.getElementById('mapChart'));
+
+        // 窗口大小改变时重绘图表
+        window.addEventListener('resize', function() {
+            trendChart.resize();
+            riskChart.resize();
+            districtBarChart.resize();
+            top5TrendChart.resize();
+            mapChart.resize();
+        });
+        
+        // 地图数据缓存
+        let mapDataCache = [];
+        let currentMapType = 'cumulative';
+
+        // 0. 加载地图数据
+        Promise.all([
+            fetch('/static/hksar_18_district_boundary.json').then(res => res.json()),
+            fetch('/api/map_data').then(res => res.json())
+        ]).then(([geoJson, data]) => {
+            echarts.registerMap('HK', geoJson);
+            mapDataCache = data;
+            renderMap('cumulative');
+        });
+
+        function renderMap(type) {
+            currentMapType = type;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(getLabel(type))) {
+                    btn.classList.add('active');
+                }
+            });
+
+            const data = mapDataCache.map(item => ({
+                name: item.name,
+                value: item[type],
+                // 保留所有数据以便 tooltip 显示
+                allData: item
+            }));
+
+            const maxVal = Math.max(...data.map(d => d.value));
+            
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        if (!params.data) return params.name;
+                        const d = params.data.allData;
+                        return `
+                            <div style="font-weight:bold; margin-bottom:5px;">${params.name}</div>
+                            累计确诊: ${d.cumulative}<br>
+                            现存确诊: ${d.active}<br>
+                            累计康复: ${d.recovered}<br>
+                            累计死亡: ${d.deaths}
+                        `;
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: maxVal,
+                    text: ['High', 'Low'],
+                    realtime: false,
+                    calculable: true,
+                    inRange: {
+                        color: getColorRange(type)
+                    }
+                },
+                series: [
+                    {
+                        name: '香港各区疫情',
+                        type: 'map',
+                        map: 'HK',
+                        label: {
+                            show: true
+                        },
+                        data: data,
+                        nameProperty: '地區' // 指定 GeoJSON 中对应的属性名
+                    }
+                ]
+            };
+            mapChart.setOption(option);
+        }
+
+        function updateMap(type) {
+            renderMap(type);
+        }
+
+        function getLabel(type) {
+            const map = {
+                'cumulative': '累计确诊',
+                'active': '现存确诊',
+                'recovered': '累计康复',
+                'deaths': '累计死亡'
+            };
+            return map[type];
+        }
+
+        function getColorRange(type) {
+            const ranges = {
+                'cumulative': ['#e3f2fd', '#0d47a1'], // 蓝
+                'active': ['#fff3e0', '#e65100'],     // 橙
+                'recovered': ['#e8f5e9', '#1b5e20'],  // 绿
+                'deaths': ['#ffebee', '#b71c1c']      // 红
+            };
+            return ranges[type];
+        }
+
+        // 1. 加载概览数据
+        fetch('/api/summary')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('data-date').textContent = '数据更新日期：' + data.date;
+                document.getElementById('total-cumulative').textContent = data.cumulative.toLocaleString();
+                document.getElementById('total-active').textContent = data.active.toLocaleString();
+                document.getElementById('total-recovered').textContent = data.recovered.toLocaleString();
+                document.getElementById('total-deaths').textContent = data.deaths.toLocaleString();
+            });
+
+        // 2. 加载全港趋势图
+        fetch('/api/trend')
+            .then(response => response.json())
+            .then(data => {
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'cross' }
+                    },
+                    legend: {
+                        data: ['新增确诊', '新增康复']
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: data.dates
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [
+                        {
+                            name: '新增确诊',
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#3498db' },
+                            areaStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    { offset: 0, color: 'rgba(52, 152, 219, 0.5)' },
+                                    { offset: 1, color: 'rgba(52, 152, 219, 0.1)' }
+                                ])
+                            },
+                            data: data.new_cases
+                        },
+                        {
+                            name: '新增康复',
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#2ecc71' },
+                            data: data.new_recovered
+                        }
+                    ]
+                };
+                trendChart.setOption(option);
+            });
+
+        // 3. 加载风险等级分布图
+        fetch('/api/risk_distribution')
+            .then(response => response.json())
+            .then(data => {
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left'
+                    },
+                    series: [
+                        {
+                            name: '风险等级',
+                            type: 'pie',
+                            radius: ['50%', '70%'],
+                            avoidLabelOverlap: false,
+                            itemStyle: {
+                                borderRadius: 10,
+                                borderColor: '#fff',
+                                borderWidth: 2
+                            },
+                            label: {
+                                show: false,
+                                position: 'center'
+                            },
+                            emphasis: {
+                                label: {
+                                    show: true,
+                                    fontSize: 20,
+                                    fontWeight: 'bold'
+                                }
+                            },
+                            labelLine: {
+                                show: false
+                            },
+                            data: data,
+                            color: ['#2ecc71', '#f1c40f', '#e74c3c'] // 假设顺序是低、中、高，这里简单设置颜色，实际可能需要匹配 name
+                        }
+                    ]
+                };
+                riskChart.setOption(option);
+            });
+
+        // 4. 加载各区累计确诊排行
+        fetch('/api/district_stats')
+            .then(response => response.json())
+            .then(data => {
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'value',
+                        boundaryGap: [0, 0.01]
+                    },
+                    yAxis: {
+                        type: 'category',
+                        data: data.districts.reverse() // 翻转以显示最高的在上面
+                    },
+                    series: [
+                        {
+                            name: '累计确诊',
+                            type: 'bar',
+                            data: data.cumulative_cases.reverse(),
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                    { offset: 0, color: '#83bff6' },
+                                    { offset: 0.5, color: '#188df0' },
+                                    { offset: 1, color: '#188df0' }
+                                ])
+                            }
+                        }
+                    ]
+                };
+                districtBarChart.setOption(option);
+            });
+
+        // 5. 加载 Top 5 地区新增趋势对比
+        fetch('/api/district_trend_top5')
+            .then(response => response.json())
+            .then(data => {
+                const option = {
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    legend: {
+                        data: data.districts
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: data.dates
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: data.series
+                };
+                top5TrendChart.setOption(option);
+            });
+
+    </script>
+</body>
+</html>
