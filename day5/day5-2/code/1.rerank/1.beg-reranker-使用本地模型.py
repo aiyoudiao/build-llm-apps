@@ -28,12 +28,15 @@ model_dir = os.path.join(cache_dir, model_name)
 # 2. 模型下载（如果不存在）
 # ==============================
 
+# 判断目录下是否包含该模型，如果不包含则下载
 if not os.path.exists(model_dir):
-    print(f"开始下载模型 {model_name}")
+    print(f"开始下载模型 {model_name} 到 {cache_dir}")
+    # 使用 modelscope 下载模型
     snapshot_download(model_name, cache_dir=cache_dir)
-    print("模型下载完成")
+    print(f"{model_name} 下载完成")
 else:
-    print("本地已有模型，跳过下载")
+    print(f"模型 {model_name} 已存在于 {model_dir}")
+    print("请勿重复下载")
 
 
 # ==============================
