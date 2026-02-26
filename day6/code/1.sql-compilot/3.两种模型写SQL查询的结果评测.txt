@@ -1,0 +1,39 @@
+正在启动 SQL 自动化执行评测任务...
+警告：检测到使用默认密码或未配置 DB_PASSWORD 环境变量。
+在生产环境中，请务必通过 .env 文件或系统环境变量配置真实的数据库密码。
+数据库引擎创建成功。
+成功加载文件，共 10 条记录。
+------------------------------
+[1/10] 正在执行：SELECT Name, PhoneNumber FROM CustomerInfo...
+   -> 执行成功
+[2/10] 正在执行：SELECT CI.CustomerID, PI.Beneficiary AS SpouseName...
+   -> 执行成功
+[3/10] 正在执行：SELECT p.PolicyNumber, c.Name
+FROM PolicyInfo p
+JO...
+   -> 执行成功
+[4/10] 正在执行：SELECT ci.ClaimNumber, ci.ClaimAmount, c.Name AS C...
+   -> 执行成功
+[5/10] 正在执行：SELECT Name, LicenseExpirationDate
+FROM AgentInfo
+...
+   -> 执行成功
+[6/10] 正在执行：SELECT ProductName, Premium FROM ProductInfo ORDER...
+   -> 执行成功
+[7/10] 正在执行：SELECT Name, Position 
+FROM EmployeeInfo 
+WHERE Lo...
+   -> 执行成功
+[8/10] 正在执行：SELECT CustomerID, Name, DateOfBirth
+FROM Customer...
+   -> 执行成功
+[9/10] 正在执行：SELECT ClaimNumber, ClaimHandler, ReviewDate
+FROM ...
+   -> 执行成功
+[10/10] 正在执行：SELECT 
+    ProductType, 
+    AVG(Premium) AS Aver...
+   -> 执行成功
+------------------------------
+评测完成！总计：10, 成功：10, 准确率：100.00%
+详细结果已保存至：./data/sql_result_qwen_coder_evaluated.xlsx
