@@ -1,0 +1,160 @@
+正在启动 SQL 自动生成任务 (Qwen-Coder 版)...
+系统提示：DashScope API Key 加载成功。
+成功加载建表语句文件：./data/create_sql.txt
+成功加载问题列表，共 10 个问题。
+------------------------------
+[1/10] 正在处理：获取所有客户的姓名和联系电话。...
+   -> 生成成功 (耗时：0.99s)
+   -> 模型结果：
+```sql
+SELECT Name, PhoneNumber FROM CustomerInfo;
+```
+[2/10] 正在处理：找出所有已婚客户的客户ID和配偶姓名。...
+   -> 生成成功 (耗时：2.33s)
+   -> 模型结果：
+```sql
+SELECT CI.CustomerID, PI.Beneficiary AS SpouseName
+FROM CustomerInfo CI
+JOIN PolicyInfo PI ON CI.CustomerID = PI.CustomerID
+WHERE CI.MaritalStatus = 'Married' AND PI.Relationship = 'Spouse';
+```
+[3/10] 正在处理：查询所有未支付保费的保单号和客户姓名。...
+   -> 生成成功 (耗时：1.9s)
+   -> 模型结果：
+```sql
+SELECT p.PolicyNumber, c.Name
+FROM PolicyInfo p
+JOIN CustomerInfo c ON p.CustomerID = c.CustomerID
+WHERE p.PremiumPaymentStatus = '未支付';
+```
+[4/10] 正在处理：找出所有理赔金额大于10000元的理赔记录，并列出相关客户的姓名和联系电话。...
+   -> 生成成功 (耗时：3.35s)
+   -> 模型结果：
+```sql
+SELECT ci.ClaimNumber, ci.ClaimAmount, c.Name AS CustomerName, c.PhoneNumber AS CustomerPhoneNumber
+FROM ClaimInfo ci
+JOIN PolicyInfo pi ON ci.PolicyNumber = pi.PolicyNumber
+JOIN CustomerInfo c ON pi.CustomerID = c.CustomerID
+WHERE ci.ClaimAmount > 10000;
+```
+[5/10] 正在处理：查找代理人的姓名和执照到期日期，按照执照到期日期升序排序。...
+   -> 生成成功 (耗时：1.29s)
+   -> 模型结果：
+```sql
+SELECT Name, LicenseExpirationDate
+FROM AgentInfo
+ORDER BY LicenseExpirationDate ASC;
+```
+[6/10] 正在处理：获取所有保险产品的产品名称和保费，按照保费降序排序。...
+   -> 生成成功 (耗时：1.05s)
+   -> 模型结果：
+```sql
+SELECT ProductName, Premium FROM ProductInfo ORDER BY Premium DESC;
+```
+[7/10] 正在处理：查询销售区域在上海的员工，列出他们的姓名和职位。...
+   -> 生成成功 (耗时：1.09s)
+   -> 模型结果：
+```sql
+SELECT Name, Position 
+FROM EmployeeInfo 
+WHERE Location = '上海';
+```
+[8/10] 正在处理：找出所有年龄在30岁以下的客户，并列出其客户ID、姓名和出生日期。...
+   -> 生成成功 (耗时：1.74s)
+   -> 模型结果：
+```sql
+SELECT CustomerID, Name, DateOfBirth
+FROM CustomerInfo
+WHERE TIMESTAMPDIFF(YEAR, DateOfBirth, CURDATE()) < 30;
+```
+[9/10] 正在处理：查找所有已审核但尚未支付的理赔记录，包括理赔号、审核人和审核日期。...
+   -> 生成成功 (耗时：1.57s)
+   -> 模型结果：
+```sql
+SELECT ClaimNumber, ClaimHandler, ReviewDate
+FROM ClaimInfo
+WHERE ClaimStatus = 'Reviewed' AND PaymentDate IS NULL;
+```
+[10/10] 正在处理：获取每个产品类型下的平均保费，以及该产品类型下的产品数量。...
+   -> 生成成功 (耗时：1.93s)
+   -> 模型结果：
+```sql
+SELECT 
+    ProductType, 
+    AVG(Premium) AS AveragePremium, 
+    COUNT(ProductID) AS ProductCount
+FROM 
+    ProductInfo
+GROUP BY 
+    ProductType;
+```
+------------------------------
+正在保存结果到 Excel...
+任务完成！结果已保存至：./data/sql_result_qwen_coder.xlsx
+统计信息：总计 10 条，成功 10 条，平均耗时 1.72 秒。
+
+=== 详细结果预览 ===
+Record 1: [Success] (耗时: 0.99s)
+  QA : 获取所有客户的姓名和联系电话。
+  SQL: SELECT Name, PhoneNumber FROM CustomerInfo;
+------------------------------
+Record 2: [Success] (耗时: 2.33s)
+  QA : 找出所有已婚客户的客户ID和配偶姓名。
+  SQL: SELECT CI.CustomerID, PI.Beneficiary AS SpouseName
+FROM CustomerInfo CI
+JOIN PolicyInfo PI ON CI.CustomerID = PI.CustomerID
+WHERE CI.MaritalStatus = 'Married' AND PI.Relationship = 'Spouse';
+------------------------------
+Record 3: [Success] (耗时: 1.9s)
+  QA : 查询所有未支付保费的保单号和客户姓名。
+  SQL: SELECT p.PolicyNumber, c.Name
+FROM PolicyInfo p
+JOIN CustomerInfo c ON p.CustomerID = c.CustomerID
+WHERE p.PremiumPaymentStatus = '未支付';
+------------------------------
+Record 4: [Success] (耗时: 3.35s)
+  QA : 找出所有理赔金额大于10000元的理赔记录，并列出相关客户的姓名和联系电话。
+  SQL: SELECT ci.ClaimNumber, ci.ClaimAmount, c.Name AS CustomerName, c.PhoneNumber AS CustomerPhoneNumber
+FROM ClaimInfo ci
+JOIN PolicyInfo pi ON ci.PolicyNumber = pi.PolicyNumber
+JOIN CustomerInfo c ON pi....
+------------------------------
+Record 5: [Success] (耗时: 1.29s)
+  QA : 查找代理人的姓名和执照到期日期，按照执照到期日期升序排序。
+  SQL: SELECT Name, LicenseExpirationDate
+FROM AgentInfo
+ORDER BY LicenseExpirationDate ASC;
+------------------------------
+Record 6: [Success] (耗时: 1.05s)
+  QA : 获取所有保险产品的产品名称和保费，按照保费降序排序。
+  SQL: SELECT ProductName, Premium FROM ProductInfo ORDER BY Premium DESC;
+------------------------------
+Record 7: [Success] (耗时: 1.09s)
+  QA : 查询销售区域在上海的员工，列出他们的姓名和职位。
+  SQL: SELECT Name, Position 
+FROM EmployeeInfo 
+WHERE Location = '上海';
+------------------------------
+Record 8: [Success] (耗时: 1.74s)
+  QA : 找出所有年龄在30岁以下的客户，并列出其客户ID、姓名和出生日期。
+  SQL: SELECT CustomerID, Name, DateOfBirth
+FROM CustomerInfo
+WHERE TIMESTAMPDIFF(YEAR, DateOfBirth, CURDATE()) < 30;
+------------------------------
+Record 9: [Success] (耗时: 1.57s)
+  QA : 查找所有已审核但尚未支付的理赔记录，包括理赔号、审核人和审核日期。
+  SQL: SELECT ClaimNumber, ClaimHandler, ReviewDate
+FROM ClaimInfo
+WHERE ClaimStatus = 'Reviewed' AND PaymentDate IS NULL;
+------------------------------
+Record 10: [Success] (耗时: 1.93s)
+  QA : 获取每个产品类型下的平均保费，以及该产品类型下的产品数量。
+  SQL: SELECT 
+    ProductType, 
+    AVG(Premium) AS AveragePremium, 
+    COUNT(ProductID) AS ProductCount
+FROM 
+    ProductInfo
+GROUP BY 
+    ProductType;
+------------------------------

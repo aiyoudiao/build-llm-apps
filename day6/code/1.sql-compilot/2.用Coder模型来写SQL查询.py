@@ -1,46 +1,25 @@
 """
 ===============================================================================
-保险业务自然语言转SQL批量生成工具
+保险业务自然语言转SQL批量生成工具 (Qwen-Coder版)
 
-依赖库：dashscope, pandas, openpyxl (用于Excel输出)
+依赖库：dashscope, pandas, openpyxl, python-dotenv
 
 【功能概述】
-使用阿里云通义千问大模型（Qwen-turbo），将保险业务领域的自然语言问题
-自动转换为可执行的 SQL 查询语句。它通过读取本地的数据库表结构描述文件和问题列表，
-批量调用大模型接口，生成对应的 SQL 代码，并将结果（原始问题、生成的SQL、耗时、状态）
-保存为 Excel 报告。
+使用阿里云通义千问代码专用模型（Qwen-coder-plus），基于标准的 SQL 建表语句 (DDL)，
+将保险业务领域的自然语言问题自动转换为高质量的可执行 SQL 查询语句。
+相比通用模型，Qwen-Coder 在理解数据库 Schema 和生成复杂 SQL 逻辑方面表现更佳。
 
-【适用场景】
-1. 辅助数据分析师：让不懂 SQL 的业务人员快速获取数据查询语句。
-2. 模型效果评估：批量测试大模型在特定领域（保险）Schema 下的 Text-to-SQL 准确率。
-3. 自动化报表前置：作为自动化数据 pipeline 的一环，动态生成查询逻辑。
-
-【执行流程】
-1. 初始化配置：
-   - 从环境变量读取 DashScope API Key。
-   - 定义输入（表结构文件、问题列表文件）和输出（Excel 结果文件）路径。
-
-2. 数据加载：
-   - 读取数据库表结构描述（Schema Description），作为模型的上下文知识。
-   - 读取自然语言问题列表，支持自定义分隔符（=====）切分多个问题。
-
-3. 批量处理循环：
-   - 遍历每一个自然语言问题。
-   - 构建提示词（Prompt）：结合“系统指令（角色设定+格式约束）” + “表结构上下文” + “用户问题”。
-   - 调用大模型接口：发送请求并获取响应，包含重试机制以应对网络波动或限流。
-   - 解析响应：使用正则表达式从模型返回的文本中提取纯净的 SQL 代码（去除多余解释）。
-   - 记录结果：保存原始问题、生成的 SQL、耗时以及执行状态（成功/失败）。
-   - 异常保护：单个问题生成失败不会中断整个流程，会记录错误信息并继续处理下一个。
-
-4. 结果输出：
-   - 将所有处理结果整理为 Pandas DataFrame。
-   - 导出为 Excel 文件，方便后续人工审核或自动化执行。
-   - 打印任务统计信息（总数量、成功率、平均耗时）。
+【核心流程】
+1. 初始化：加载 API Key，读取 DDL 建表语句和问题列表。
+2. 构建提示词：将 DDL 作为上下文，结合用户问题，构造适合代码模型的指令。
+3. 调用模型：批量请求 Qwen-coder-plus 接口，包含超时重试和错误处理。
+4. 解析提取：通过正则表达式精准提取 ```sql 代码块。
+5. 结果持久化：将问题、生成的 SQL、耗时及状态保存为 Excel 文件，并打印统计报告。
 
 【注意事项】
-- 请确保已安装依赖库：pip install dashscope pandas openpyxl
-- 请在操作系统环境变量中配置 DASHSCOPE_API_KEY。
-- 输入文件路径需与实际文件位置一致。
+- 确保已安装依赖：pip install dashscope pandas openpyxl python-dotenv
+- 需在环境变量或 .env 文件中配置 DASHSCOPE_API_KEY。
+- 输入文件 create_sql.txt 应包含标准的 CREATE TABLE 语句。
 ===============================================================================
 """
 
@@ -51,30 +30,31 @@ import time
 import pandas as pd
 import dashscope
 from dotenv import load_dotenv
+
+# 加载 .env 文件中的环境变量
 load_dotenv()
 
 # =================配置区域=================
 
 # 定义输入输出文件路径
-# 存储生成结果的 Excel 文件路径
-SAVE_FILE_PATH = './input/sql_result_qwen_turbo.xlsx'
-# 数据库表结构描述文件路径（包含表名、字段名及含义）
-TABLE_DESC_FILE_PATH = './data/数据表字段说明-精简1.txt'
-# 自然语言问题列表文件路径（每个问题之间用 ===== 分隔）
+SAVE_FILE_PATH = './data/sql_result_qwen_coder.xlsx'
 QA_LIST_FILE_PATH = './data/qa_list-2.txt'
+DDL_FILE_PATH = './data/create_sql.txt'
 
-# 定义使用的通义千问模型版本
-MODEL_NAME = 'qwen-turbo-latest'
+# 定义使用的通义千问代码模型版本
+# qwen-coder-plus 在代码生成任务上通常优于 turbo 版本
+MODEL_NAME = 'qwen-coder-plus'
 
 # =================初始化设置=================
 
 def init_api_key():
     """
     从环境变量中获取并设置 DashScope API Key。
+    支持从系统环境变量或 .env 文件读取。
     """
     api_key = os.environ.get('DASHSCOPE_API_KEY')
     if not api_key:
-        raise ValueError("未在环境变量中找到 DASHSCOPE_API_KEY，请先行配置。")
+        raise ValueError("未在环境变量中找到 DASHSCOPE_API_KEY，请检查 .env 文件或系统配置。")
     dashscope.api_key = api_key
     print("系统提示：DashScope API Key 加载成功。")
 
@@ -83,7 +63,13 @@ def init_api_key():
 def call_llm_api(messages):
     """
     调用通义千问大模型接口获取响应。
-    包含重试逻辑和通用异常处理。
+    包含重试逻辑、状态码检查和通用异常处理，确保批量任务的稳定性。
+    
+    参数:
+        messages: 符合 DashScope 格式的对话消息列表
+    
+    返回:
+        response: 模型原始响应对象
     """
     max_retries = 3
     retry_count = 0
@@ -94,25 +80,25 @@ def call_llm_api(messages):
             response = dashscope.Generation.call(
                 model=MODEL_NAME,
                 messages=messages,
-                result_format='message',
-                timeout=60
+                result_format='message',  # 指定返回格式为 message 对象
+                timeout=60  # 设置超时时间为 60 秒，防止长 SQL 生成中断
             )
             
-            # 关键修改：通过检查 status_code 判断业务是否成功
-            # 200 表示成功，其他代码表示各种错误（如限流、参数错误等）
+            # 检查业务状态码
             if response.status_code == 200:
                 return response
             else:
                 error_msg = f"API 请求失败，状态码：{response.status_code}, 信息：{response.message}"
                 print(error_msg)
                 
-                # 如果是 5xx 服务器错误或 429 限流，尝试重试
+                # 针对服务器错误 (5xx) 或限流 (429) 进行重试
                 if response.status_code >= 500 or response.status_code == 429:
                     retry_count += 1
-                    print(f"正在重试 ({retry_count}/{max_retries})...")
-                    time.sleep(2)
+                    wait_time = 2 * retry_count  # 指数退避
+                    print(f"正在重试 ({retry_count}/{max_retries})，等待 {wait_time} 秒...")
+                    time.sleep(wait_time)
                 else:
-                    # 其他错误（如 401 授权失败，400 参数错误）通常重试无效，直接抛出
+                    # 客户端错误 (如 401, 400) 重试通常无效，直接抛出
                     raise RuntimeError(error_msg)
                 
         except Exception as e:
@@ -131,61 +117,84 @@ def call_llm_api(messages):
 def extract_sql_code(response_content):
     """
     从模型返回的文本中提取纯 SQL 代码。
+    优先匹配 ```sql 代码块，其次匹配任意 ``` 代码块。
+    
+    参数:
+        response_content: 模型返回的完整文本内容
+    
+    返回:
+        sql_code: 提取出的 SQL 字符串
     """
-    # 优先匹配 ```sql ... ```
+    # 正则表达式 1：精准匹配 ```sql ... ``` (忽略大小写)
     pattern_sql = r'```sql\s*(.*?)\s*```'
     match = re.search(pattern_sql, response_content, re.DOTALL | re.IGNORECASE)
     
     if match:
         return match.group(1).strip()
     
-    # 兜底匹配任意 ``` ... ```
+    # 正则表达式 2：兜底策略，匹配任意 ``` ... ```
     pattern_generic = r'```\s*(.*?)\s*```'
     match = re.search(pattern_generic, response_content, re.DOTALL)
     
     if match:
         return match.group(1).strip()
     
+    # 如果未找到代码块，返回原始内容（可能模型直接输出了 SQL）
     return response_content.strip()
 
-def generate_single_sql(query_text, table_schema):
+def generate_single_sql(query_text, ddl_schema):
     """
-    构建提示词并调用模型生成单个问题的 SQL。
+    构建针对代码模型优化的提示词，并调用模型生成 SQL。
+    
+    参数:
+        query_text: 用户的自然语言问题
+        ddl_schema: 数据库建表语句 (DDL)
+    
+    返回:
+        tuple: (生成的 SQL 字符串, 原始响应内容, 耗时秒数)
     """
+    # 系统提示词：设定专家角色，强调基于 DDL 生成标准 SQL
     system_prompt = (
-        "你是一位精通保险业务数据的 SQL 专家。"
-        "请根据提供的数据库表结构描述，将用户的自然语言问题转换为标准的 SQL 查询语句。"
-        "要求：\n"
-        "1. 仅输出 SQL 代码，不要包含任何解释性文字。\n"
+        "你是一位精通数据库架构和 SQL 编写的专家助手。"
+        "你的任务是根据提供的数据库建表语句 (DDL)，将用户的自然语言问题转换为准确、高效的 SQL 查询语句。"
+        "请严格遵守以下规则：\n"
+        "1. 只输出 SQL 代码，不要包含任何解释、注释或额外的文字。\n"
         "2. 必须将 SQL 代码包裹在 ```sql 和 ``` 标记中。\n"
-        "3. 如果涉及多表查询，请确保 JOIN 条件正确。\n"
-        "4. 如果有多个查询需求，尝试合并为一个高效的 SQL 语句。"
+        "3. 确保引用的表名和字段名与提供的 DDL 完全一致。\n"
+        "4. 如果问题涉及多表关联，请正确使用 JOIN 语法。"
     )
     
+    # 用户提示词：采用结构化格式，清晰区分输入 (DDL) 和任务 (Question)
+    # 这种格式特别适合 Qwen-Coder 系列模型
     user_prompt = (
-        f"以下是数据库的表结构描述：\n{table_schema}\n"
-        f"=====分割线=====\n"
-        f"请将以下自然语言问题转换为 SQL：\n{query_text}"
+        f"-- Database Schema (DDL):\n{ddl_schema}\n\n"
+        f"### Question:\n{query_text}\n\n"
+        f"### Response:\n"
+        f"Here is the SQL query to answer the question:\n"
     )
     
+    # 组装消息列表
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
     ]
     
+    # 记录开始时间
     start_time = time.time()
     
-    # 调用封装好的 API 函数
+    # 调用 API
     response = call_llm_api(messages)
     
+    # 计算耗时
     elapsed_time = round(time.time() - start_time, 2)
     
-    # 安全地获取内容，防止结构变化导致报错
+    # 安全地获取响应内容
     try:
         content = response.output.choices[0].message.content
     except (AttributeError, IndexError, KeyError) as e:
         raise RuntimeError(f"解析模型响应结构失败：{e}. 原始响应：{str(response)}")
     
+    # 提取纯净的 SQL 代码
     sql_code = extract_sql_code(content)
     
     return sql_code, content, elapsed_time
@@ -193,7 +202,10 @@ def generate_single_sql(query_text, table_schema):
 # =================主执行流程=================
 
 def main():
-    print("正在启动 SQL 自动生成任务...")
+    """
+    主程序入口：协调文件读取、批量处理和结果保存。
+    """
+    print("正在启动 SQL 自动生成任务 (Qwen-Coder 版)...")
     
     # 1. 初始化 API Key
     try:
@@ -203,14 +215,20 @@ def main():
         return
 
     # 2. 读取基础数据文件
+    ddl_schema = ""
+    qa_list = []
+    
     try:
-        with open(TABLE_DESC_FILE_PATH, 'r', encoding='utf-8') as f:
-            table_description = f.read()
-        print(f"成功加载表结构描述文件：{TABLE_DESC_FILE_PATH}")
+        # 读取 DDL 建表语句
+        with open(DDL_FILE_PATH, 'r', encoding='utf-8') as f:
+            ddl_schema = f.read()
+        print(f"成功加载建表语句文件：{DDL_FILE_PATH}")
         
+        # 读取问题列表
         with open(QA_LIST_FILE_PATH, 'r', encoding='utf-8') as f:
             raw_qa_content = f.read()
         
+        # 使用 ===== 作为分隔符切分问题，并去除空白项
         qa_list = [q.strip() for q in raw_qa_content.split('=====') if q.strip()]
         print(f"成功加载问题列表，共 {len(qa_list)} 个问题。")
         
@@ -223,21 +241,25 @@ def main():
 
     # 3. 准备结果存储容器
     results_data = {
-        'QA': [],       
-        'SQL': [],      
-        'Time_Cost': [],
-        'Status': []    
+        'QA': [],       # 原始问题
+        'SQL': [],      # 生成的 SQL
+        'Time_Cost': [],# 耗时
+        'Status': []    # 执行状态
     }
 
     # 4. 循环处理每个问题
     print("-" * 30)
     for index, query in enumerate(qa_list, 1):
-        print(f"[{index}/{len(qa_list)}] 正在处理：{query[:50]}...")
+        # 清理问题中的多余换行符
+        clean_query = query.replace('\n', ' ')
+        print(f"[{index}/{len(qa_list)}] 正在处理：{clean_query[:50]}...")
         
         try:
-            sql, raw_response, cost_time = generate_single_sql(query, table_description)
+            # 调用生成函数
+            sql, raw_response, cost_time = generate_single_sql(clean_query, ddl_schema)
             
-            results_data['QA'].append(query)
+            # 记录成功结果
+            results_data['QA'].append(clean_query)
             results_data['SQL'].append(sql)
             results_data['Time_Cost'].append(cost_time)
             results_data['Status'].append('Success')
@@ -245,28 +267,31 @@ def main():
             print(f"   -> 生成成功 (耗时：{cost_time}s)")
             print(f"   -> 模型结果：\n{raw_response}")
             
-            
         except Exception as e:
+            # 记录失败结果，确保单个失败不影响后续处理
             error_msg = str(e)
             print(f"   -> 生成失败：{error_msg}")
             
-            results_data['QA'].append(query)
+            results_data['QA'].append(clean_query)
             results_data['SQL'].append(f"-- Error: {error_msg}")
             results_data['Time_Cost'].append(0.0)
             results_data['Status'].append('Failed')
             
+        # 简单的延时，避免触发 API 频率限制
         time.sleep(0.5)
 
-    # 5. 保存结果
+    # 5. 将结果保存为 DataFrame 并导出 Excel
     print("-" * 30)
     print("正在保存结果到 Excel...")
     
     df_result = pd.DataFrame(results_data)
     
     try:
+        # 导出时不包含索引列
         df_result.to_excel(SAVE_FILE_PATH, index=False)
         print(f"任务完成！结果已保存至：{SAVE_FILE_PATH}")
         
+        # 打印简要统计
         total = len(df_result)
         success = len(df_result[df_result['Status'] == 'Success'])
         if success > 0:
@@ -277,8 +302,9 @@ def main():
         
     except Exception as e:
         print(f"保存 Excel 文件失败：{e}")
-    
-    # =================结果展示=================
+
+    # 6. 结果展示
+        
     print("\n=== 详细结果预览 ===")
     
     # 使用 zip 并行遍历，代码更优雅，避免索引越界风险
@@ -307,4 +333,5 @@ def main():
         print("-" * 30)
 
 if __name__ == '__main__':
+    # 执行主程序
     main()
