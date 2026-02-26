@@ -74,7 +74,7 @@ DB_NAME = os.environ.get('DB_NAME', '')
 # 阿里云 DashScope 兼容模式地址
 DASHSCOPE_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 # 推荐使用阿里云原生模型，如 qwen-plus, qwen-turbo, qwen-max
-LLM_MODEL_NAME = os.environ.get('LLM_MODEL', 'deepseek-v3')
+LLM_MODEL_NAME = os.environ.get('LLM_MODEL', 'qwen-plus')
 API_KEY = os.environ.get('DASHSCOPE_API_KEY')
 if not API_KEY:
     raise ValueError("未在环境变量中找到 DASHSCOPE_API_KEY，请先行配置。")
