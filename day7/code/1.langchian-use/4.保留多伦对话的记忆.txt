@@ -1,0 +1,17 @@
+--- 开始对话 ---
+User: Hi there!
+AI: 你好呀！😊 有什么我可以帮你的吗？
+
+User: I'm doing well! Just having a conversation with an AI.
+AI: 那太好了！和AI聊天很有趣吧？😊 有什么话题想聊吗？我很乐意和你一起讨论哦！
+
+User: 刚才我说我在做什么？
+AI: 你刚才说你在和一个AI聊天，对吧？😊 你想继续聊些什么呢？
+
+--- 当前会话历史快照 ---
+[Human]: Hi there!
+[AI]: 你好呀！😊 有什么我可以帮你的吗？
+[Human]: I'm doing well! Just having a conversation with an AI.
+[AI]: 那太好了！和AI聊天很有趣吧？😊 有什么话题想聊吗？我很乐意和你一起讨论哦！
+[Human]: 刚才我说我在做什么？
+[AI]: 你刚才说你在和一个AI聊天，对吧？😊 你想继续聊些什么呢？
