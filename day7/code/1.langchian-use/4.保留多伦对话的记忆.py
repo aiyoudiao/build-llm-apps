@@ -1,7 +1,7 @@
 """
 LangChain 新版对话链示例 (基于 LCEL 声明式链式表达语法 prompt | llm | parser)
 ------------------------------------
-本脚本演示如何使用 LangChain 0.2+ 的新式 API 构建带有记忆功能的对话链。
+使用 LangChain 0.2+ 的新式 API 构建带有记忆功能的对话链。
 替代了旧版的 ConversationChain 和 initialize_agent 模式。
 
 核心组件：
