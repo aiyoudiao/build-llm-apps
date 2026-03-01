@@ -69,7 +69,7 @@
 ### [Day 6: Text-to-SQL 应用开发](./day6/README.md)
 专注于让大模型操作数据库，从简单的 SQL 生成到智能 BI 助手。
 
-> 🔗 **传送门**：[点击查看 Day 6 详细文档与代码](./day6/README.md)
+> 🔗 **传送门**：[点击查看 Day 6 详细文档与代码](./day6/README.md)\
 > 🔥 **Text-to-SQL 类项目落地**：[点击查看 Web3 Vanna Pro](https://github.com/aiyoudiao/web3-vanna-pro)
 
 - **基础生成**：对比 Chat 模型与 Coder 模型（DeepSeek-Coder）的 SQL 生成效果。
