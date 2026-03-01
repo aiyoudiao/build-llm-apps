@@ -1,0 +1,40 @@
+template 
+尽你所能回答以下问题。你可以使用以下工具：
+
+{tools}
+
+请使用以下格式：
+
+Question: 你必须回答的输入问题
+Thought: 你应该时刻思考该做什么
+Action: 采取的行动，必须是 [{tool_names}] 之一
+Action Input: 行动的输入
+Observation: 行动的结果
+... (Thought/Action/Action Input/Observation 这个过程可以重复 N 次)
+Thought: 我现在知道最终答案了
+Final Answer: 对原始输入问题的最终答案
+
+开始！
+
+Question: {input}
+Thought:{agent_scratchpad}
+
+
+[1m> Entering new AgentExecutor chain...[0m
+[32;1m[1;3m为了回答这个问题，我需要先获取福州当前的温度，然后计算其1/4的值。
+
+Action: Search  
+Action Input: "当前福州温度 摄氏度"  
+[0m[36;1m[1;3m{'type': 'weather_result', 'temperature': '16', 'unit': 'Celsius', 'precipitation': '25%', 'humidity': '100%', 'wind': '2 km/h', 'location': '中国福建省福州市', 'date': 'Sunday 10:00 PM', 'weather': 'Cloudy'}[0m[32;1m[1;3m我现在知道福州当前的温度是16摄氏度。接下来需要计算16的1/4是多少。
+
+Action: Calculator  
+Action Input: 16 / 4  
+[0m[33;1m[1;3mAnswer: 4.0[0m[32;1m[1;3m我现在知道最终答案了  
+Final Answer: 当前福州的温度是16摄氏度，这个温度的1/4是4摄氏度。[0m
+
+[1m> Finished chain.[0m
+
+--- 最终回答 ---
+当前福州的温度是16摄氏度，这个温度的1/4是4摄氏度。
+
+SERPAPI_API_KEY 是否存在：Yes
