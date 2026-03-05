@@ -88,5 +88,20 @@
   - **真实执行**：调用 Ping, NSLookup, Ifconfig 等真实系统命令。
   - **Context Passing**：实现上下文传递机制，让 Agent 在多步诊断中保持状态，形成完整的证据链。
 
+### [Day 8: Agent 框架与数据分析实战](./day8/README.md)
+从手动实现 Function Calling 原理出发，进阶到使用 Qwen-Agent 框架构建标准化智能体，最终落地复杂的商业数据分析场景。
+
+> 🔗 **传送门**：[点击查看 Day 8 详细文档与代码](./day8/README.md)
+
+- **Function Calling 原理**：手动实现 LLM 与工具交互的完整闭环（思考-行动-观察）。
+- **Qwen-Agent 框架**：
+  - **单模/双模 Agent**：基于框架快速构建支持 WebUI 的智能体。
+  - **MCP 协议**：混合调用本地 Python 工具与远程 Node.js 服务（高德地图）。
+- **高级数据分析 Agent**：
+  - **Text-to-SQL**：自然语言查库，自动生成 SQL。
+  - **自动可视化**：智能识别数据维度，自动绘制柱状图/堆积图。
+  - **归因分析**：利用线性回归量化客群贡献。
+  - **关键因子挖掘**：利用决策树（CART）自动分析影响营收的核心因素（天气、节假日等）。
+
 ---
-*Last updated: 2026-03-02*
+*Last updated: 2026-03-05*
