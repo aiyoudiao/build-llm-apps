@@ -153,8 +153,15 @@ def run_weather_query(user_question: str = "北京现在天气怎么样？"):
     # 3. 判断模型是否触发了工具调用
     if hasattr(first_response_msg, 'tool_calls') and first_response_msg.tool_calls:
         tool_call = first_response_msg.tool_calls[0]
-        func_name = tool_call.function.name
-        func_args = json.loads(tool_call.function.arguments)
+        # Handle both object and dictionary structures for tool calls
+        if isinstance(tool_call, dict):
+            func_name = tool_call['function']['name']
+            func_args = json.loads(tool_call['function']['arguments'])
+            tool_call_id = tool_call.get('id')
+        else:
+            func_name = tool_call.function.name
+            func_args = json.loads(tool_call.function.arguments)
+            tool_call_id = tool_call.id
         
         print(f"🔧 模型决定调用工具：{func_name}")
         print(f"📥 提取参数：{func_args}")
@@ -173,7 +180,7 @@ def run_weather_query(user_question: str = "北京现在天气怎么样？"):
             tool_response_message = {
                 "role": "tool",
                 "content": json.dumps(weather_data, ensure_ascii=False),
-                "tool_call_id": tool_call.id # 关联具体的工具调用 ID
+                "tool_call_id": tool_call_id # 关联具体的工具调用 ID
             }
             
             # 更新对话历史：加入模型的调用请求 + 我们的执行结果
