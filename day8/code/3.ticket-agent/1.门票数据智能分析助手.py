@@ -146,12 +146,11 @@ class ExcSQLTool(BaseTool):
         try:
             args = json.loads(params)
             sql_input = args['sql_input']
-            database = args.get('database', DB_NAME)
             
             # 构建数据库连接字符串
             # 格式: mysql+mysqlconnector://user:pass@host:port/db?charset=utf8mb4
             conn_str = (
-                f'mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{database}'
+                f'mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
                 f'?charset=utf8mb4'
             )
             
