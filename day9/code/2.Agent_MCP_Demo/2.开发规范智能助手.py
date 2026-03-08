@@ -7,17 +7,17 @@
 本模块是一个基于阿里云通义千问 (Qwen) 大模型和 Qwen-Agent 框架构建的智能应用入口。
 它充当“用户”与“本地规范知识库”之间的智能桥梁：
 1. 理解用户的自然语言提问（如“Python 怎么写异常处理？”）。
-2. 自动调度本地的 MCP 服务 (2.开发规范查询助手.py) 获取权威数据。
+2. 自动调度本地的 MCP 服务 (../1.MCP_Demo/2.开发规范查询助手.py) 获取权威数据。
 3. 利用大模型的推理能力，将数据整合为专业、易读的回答。
 
 【系统架构】
 - 交互层：提供 Web 图形界面 (GUI)、终端交互 (TUI) 和单次测试 (Test) 三种模式。
 - 代理层 (Agent)：使用 qwen-max 模型作为大脑，负责意图识别和回答生成。
-- 工具层 (MCP)：通过 Model Context Protocol 动态调用本地脚本 `2.开发规范查询助手.py` 获取数据。
+- 工具层 (MCP)：通过 Model Context Protocol 动态调用本地脚本 `../1.MCP_Demo/2.开发规范查询助手.py` 获取数据。
 
 【核心流程】
 1. [初始化] 读取环境变量中的 DASHSCOPE_API_KEY，配置 LLM 参数。
-2. [注册工具] 定义 MCP 服务器配置，指定启动命令为 `python 2.开发规范查询助手.py`。
+2. [注册工具] 定义 MCP 服务器配置，指定启动命令为 `python ../1.MCP_Demo/2.开发规范查询助手.py`。
 3. [实例化] 创建 Assistant 对象，注入系统提示词 (System Prompt) 和工具列表。
 4. [交互循环] 
    - 接收用户输入 (文本/文件)。
@@ -25,7 +25,7 @@
    - Agent 结合数据生成自然语言回复 -> 返回给用户。
 
 【依赖说明】
-- 必须存在同目录下的 `2.开发规范查询助手.py` 文件（即开发规范查询服务端）。
+- 必须存在 `../1.MCP_Demo/2.开发规范查询助手.py` 文件（即开发规范查询服务端）。
 - 需要安装依赖：`pip install dashscope qwen-agent`。
 - 需要配置环境变量：`DASHSCOPE_API_KEY`。
 
@@ -84,13 +84,13 @@ def init_agent_service() -> Assistant:
     )
     
     # [MCP 工具配置] 定义如何启动和连接本地规范服务
-    # 这里通过 command 和 args 动态启动 2.开发规范查询助手.py 脚本
+    # 这里通过 command 和 args 动态启动 ../1.MCP_Demo/2.开发规范查询助手.py 脚本
     # port 6278 需确保未被其他程序占用
     tools_config = [{
         "mcpServers": {
             "2.开发规范查询助手": {
                 "command": "python",
-                "args": ["2.开发规范查询助手.py"],  # 依赖同目录下的规范服务脚本
+                "args": ["../1.MCP_Demo/2.开发规范查询助手.py"],  # 依赖规范服务脚本
                 "port": 6278                  # 指定通信端口，避免冲突
             }
         }
@@ -113,8 +113,8 @@ def init_agent_service() -> Assistant:
         # 提供具体的排查建议
         if "api_key" in str(e).lower() or not dashscope.api_key:
             print("💡 提示：请检查是否已设置环境变量 DASHSCOPE_API_KEY")
-        if "2.开发规范查询助手.py" in str(e):
-            print("💡 提示：请确认当前目录下存在 2.开发规范查询助手.py 文件")
+        if "../1.MCP_Demo/2.开发规范查询助手.py" in str(e):
+            print("💡 提示：请确认当前目录下存在 ../1.MCP_Demo/2.开发规范查询助手.py 文件")
         raise
 
 # ==========================================
