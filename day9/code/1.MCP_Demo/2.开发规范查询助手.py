@@ -34,6 +34,14 @@
 
 【扩展建议】
 若需添加新语言或更新规范，只需修改 `DEV_SPECS` 字典结构，无需更改逻辑代码。
+
+【使用方法】
+1. 运行本脚本 mcp dev 2.开发规范查询助手.py
+2. 确保 MCP 客户端已启动并连接至本服务器。
+3. 在 MCP 客户端中，发送以下指令：
+   - get_dev_spec("python")：查询 Python 开发规范。
+   - list_supported_languages()：列出所有支持的语言。
+   - get_all_specs()：获取所有语言的规范汇总。
 """
 
 import json
