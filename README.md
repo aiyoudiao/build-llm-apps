@@ -103,5 +103,18 @@
   - **归因分析**：利用线性回归量化客群贡献。
   - **关键因子挖掘**：利用决策树（CART）自动分析影响营收的核心因素（天气、节假日等）。
 
+### [Day 9: MCP 协议与 Agent 协作](./day9/README.md)
+深入 Model Context Protocol (MCP) 标准，从零构建服务端到多 Agent 协作网络。
+
+> 🔗 **传送门**：[点击查看 Day 9 详细文档与代码](./day9/README.md)
+
+- **MCP 服务端开发**：使用 FastMCP 构建本地文件管理与知识库服务。
+- **混合工具链 (Hybrid MCP)**：
+  - **本地调用**：Qwen-Agent 连接本地 Python 工具（隐私数据处理）。
+  - **远程调用**：连接 ModelScope 上的 Bing 搜索与 Web Fetch 服务。
+- **Agent-to-Agent (A2A)**：
+  - **服务发现**：通过 `/.well-known/agent.json` 实现 Agent 互联。
+  - **自动化决策**：构建“篮球活动决策代理”，自动发现并调用“天气代理”进行业务决策。
+
 ---
-*Last updated: 2026-03-05*
+*Last updated: 2026-03-09*
