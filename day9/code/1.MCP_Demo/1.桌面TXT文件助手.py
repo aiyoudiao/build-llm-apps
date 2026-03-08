@@ -24,6 +24,14 @@
 【依赖库】
 - mcp: Model Context Protocol 服务端实现
 - pathlib, os: 标准库，用于跨平台路径处理
+
+【使用方法】
+1. 运行本脚本 mcp dev 1.桌面TXT文件助手.py
+2. 确保 MCP 客户端已启动并连接至本服务器。
+3. 在 MCP 客户端中，发送以下指令：
+   - count_desktop_txt_files()：统计桌面上的 .txt 文件数量。
+   - list_desktop_txt_files()：列出桌面上的所有 .txt 文件名称。
+   - read_txt_file("filename.txt")：读取指定 .txt 文件的内容。
 """
 
 import os
