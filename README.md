@@ -103,17 +103,19 @@
   - **归因分析**：利用线性回归量化客群贡献。
   - **关键因子挖掘**：利用决策树（CART）自动分析影响营收的核心因素（天气、节假日等）。
 
-### [Day 9: MCP 协议与 Agent 协作](./day9/README.md)
-深入 Model Context Protocol (MCP) 标准，从零构建服务端到多 Agent 协作网络。
+### [Day 9: Model Context Protocol (MCP) 与 Agent 协作](./day9/README.md)
+深入探索「Model Context Protocol (MCP)」与「Agent-to-Agent (A2A)」智能体协作协议，打通智能体之间的“社交网络”。
 
 > 🔗 **传送门**：[点击查看 Day 9 详细文档与代码](./day9/README.md)
 
-- **MCP 服务端开发**：使用 FastMCP 构建本地文件管理与知识库服务。
-- **混合工具链 (Hybrid MCP)**：
-  - **本地调用**：Qwen-Agent 连接本地 Python 工具（隐私数据处理）。
-  - **远程调用**：连接 ModelScope 上的 Bing 搜索与 Web Fetch 服务。
-- **Agent-to-Agent (A2A)**：
-  - **服务发现**：通过 `/.well-known/agent.json` 实现 Agent 互联。
+- **MCP 服务端开发**：使用 `FastMCP` 快速构建本地服务。
+  - **文件系统操作**：安全暴露本地桌面文件给 AI，实现统计与读取。
+  - **内存知识库**：构建零依赖的开发规范查询服务，响应极快。
+- **Agent 调用 MCP**：
+  - **精准工具调度**：Qwen-Agent 作为 Client 自动调度本地 MCP 工具获取数据。
+  - **混合架构 (Hybrid)**：同时挂载本地（高德地图 Node.js）与远程（ModelScope Bing Search & 网页 Fetch）MCP 服务，解决复杂生活问题。
+- **Agent-to-Agent (A2A)**：基于标准协议的智能体协作。
+  - **服务发现**：通过 `/.well-known/agent.json` 暴露能力名片，实现 Agent 互联。
   - **自动化决策**：构建“篮球活动决策代理”，自动发现并调用“天气代理”进行业务决策。
 
 ---
