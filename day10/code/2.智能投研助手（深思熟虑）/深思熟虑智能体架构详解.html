@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>架构详解：深思熟虑智能体 (Deliberative Agent)</title>
+    <style>
+        :root {
+            --primary: #2563eb;       /* 核心蓝 */
+            --primary-dark: #1e40af;  /* 深蓝 */
+            --secondary: #0f172a;     /*以此为背景 */
+            --accent: #06b6d4;        /* 科技青 */
+            --text-light: #f8fafc;
+            --text-gray: #94a3b8;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--secondary);
+            color: var(--text-light);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 2px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-gray);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Section Styling */
+        section {
+            margin-bottom: 60px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-right: 15px;
+        }
+
+        .tag {
+            background: rgba(37, 99, 235, 0.2);
+            color: #60a5fa;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(37, 99, 235, 0.3);
+        }
+
+        /* Flow Chart */
+        .flow-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 30px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flow-step {
+            flex: 1;
+            min-width: 140px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .flow-step:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.3);
+        }
+
+        .step-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .step-title {
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .step-desc {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+        }
+
+        .arrow {
+            color: var(--text-gray);
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Detailed Cards Grid */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+        }
+
+        .detail-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .phase-badge {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--card-border);
+            color: var(--text-gray);
+        }
+
+        .card-body {
+            padding: 25px;
+            flex: 1;
+        }
+
+        .concept-block {
+            margin-bottom: 20px;
+        }
+
+        .concept-title {
+            font-size: 0.9rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .code-block {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            position: relative;
+        }
+        
+        .code-block::before {
+            content: 'JSON Output Schema';
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #334155;
+            color: #94a3b8;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-bottom-left-radius: 8px;
+        }
+
+        .key-point {
+            display: flex;
+            align-items: start;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .key-point svg {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            margin-top: 3px;
+            flex-shrink: 0;
+            color: var(--success);
+        }
+
+        /* Tech Stack & Comparison */
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .comparison-table th {
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--text-gray);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .comparison-table td {
+            color: var(--text-light);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .check-icon { color: var(--success); }
+        .cross-icon { color: #ef4444; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid var(--card-border);
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .flow-container { flex-direction: column; }
+            .arrow { transform: rotate(90deg); margin: 10px 0; }
+            .grid-layout { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>深思熟虑智能体架构详解</h1>
+        <div class="subtitle">Deliberative Agent Architecture for Investment Research</div>
+        <div style="margin-top: 20px;">
+            <span class="tag">System 2 Thinking</span>
+            <span class="tag" style="margin-left: 10px;">LangGraph</span>
+            <span class="tag" style="margin-left: 10px;">Deterministic Workflow</span>
+        </div>
+    </header>
+
+    <!-- 架构核心理念 -->
+    <section>
+        <div class="section-header">
+            <h2 class="section-title">核心设计理念</h2>
+        </div>
+        <p style="font-size: 1.1rem; margin-bottom: 20px; color: #cbd5e1;">
+            传统的 ReAct Agent 往往反应迅速但缺乏深度（System 1）。本架构采用 <strong>Deliberative（深思熟虑）</strong> 模式，模仿人类专家的"慢思考"过程，通过显式的 <strong>感知-建模-推理-决策</strong> 链条，确保投资建议建立在严谨的数据分析和逻辑推演之上。
+        </p>
+    </section>
+
+    <!-- 核心工作流 -->
+    <section>
+        <div class="section-header">
+            <h2 class="section-title">五步工作流</h2>
+            <span class="tag">Sequential Graph</span>
+        </div>
+        
+        <div class="flow-container">
+            <!-- Step 1 -->
+            <div class="flow-step" style="border-top: 4px solid #3b82f6;">
+                <span class="step-icon">📡</span>
+                <div class="step-title">Perception</div>
+                <div class="step-desc">感知与数据收集</div>
+            </div>
+            <div class="arrow">➜</div>
+            
+            <!-- Step 2 -->
+            <div class="flow-step" style="border-top: 4px solid #8b5cf6;">
+                <span class="step-icon">🧠</span>
+                <div class="step-title">Modeling</div>
+                <div class="step-desc">构建世界模型</div>
+            </div>
+            <div class="arrow">➜</div>
+            
+            <!-- Step 3 -->
+            <div class="flow-step" style="border-top: 4px solid #ec4899;">
+                <span class="step-icon">💡</span>
+                <div class="step-title">Reasoning</div>
+                <div class="step-desc">发散分析方案</div>
+            </div>
+            <div class="arrow">➜</div>
+            
+            <!-- Step 4 -->
+            <div class="flow-step" style="border-top: 4px solid #f59e0b;">
+                <span class="step-icon">⚖️</span>
+                <div class="step-title">Decision</div>
+                <div class="step-desc">收敛决策逻辑</div>
+            </div>
+            <div class="arrow">➜</div>
+            
+            <!-- Step 5 -->
+            <div class="flow-step" style="border-top: 4px solid #10b981;">
+                <span class="step-icon">📄</span>
+                <div class="step-title">Report</div>
+                <div class="step-desc">生成投研报告</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 详细拆解 -->
+    <section>
+        <div class="section-header">
+            <h2 class="section-title">阶段深度拆解</h2>
+        </div>
+        
+        <div class="grid-layout">
+            <!-- 1. 感知 -->
+            <div class="detail-card">
+                <div class="card-header">
+                    <div class="card-title"><span style="font-size: 1.5rem;">📡</span> 1. 感知 (Perception)</div>
+                    <span class="phase-badge">Input Processing</span>
+                </div>
+                <div class="card-body">
+                    <div class="concept-block">
+                        <div class="concept-title">功能描述</div>
+                        <p style="color: #cbd5e1; font-size: 0.95rem;">
+                            作为智能体的"眼睛和耳朵"。不进行复杂推理，专注于从宽泛的主题中提取结构化的事实数据、关键指标和新闻动态。
+                        </p>
+                    </div>
+                    <div class="code-block">
+{
+  "market_overview": "市场概况文本...",
+  "key_indicators": {"PE": "15x", "CAGR": "20%"},
+  "recent_news": ["新闻1", "新闻2"],
+  "industry_trends": {"趋势A": "...", "趋势B": "..."}
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 建模 -->
+            <div class="detail-card">
+                <div class="card-header">
+                    <div class="card-title"><span style="font-size: 1.5rem;">🧠</span> 2. 建模 (Modeling)</div>
+                    <span class="phase-badge">Context Understanding</span>
+                </div>
+                <div class="card-body">
+                    <div class="concept-block">
+                        <div class="concept-title">功能描述</div>
+                        <p style="color: #cbd5e1; font-size: 0.95rem;">
+                            将零散的感知数据转化为结构化的"内部世界模型"。评估当前的市场周期、情绪水位及核心风险因子。
+                        </p>
+                    </div>
+                    <div class="code-block">
+{
+  "market_state": "复苏期/过热期...",
+  "economic_cycle": "分析判断...",
+  "risk_factors": ["政策风险", "技术瓶颈"],
+  "opportunity_areas": ["细分赛道A", "出海逻辑"],
+  "market_sentiment": "中性偏乐观"
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 推理 -->
+            <div class="detail-card">
+                <div class="card-header">
+                    <div class="card-title"><span style="font-size: 1.5rem;">💡</span> 3. 推理 (Reasoning)</div>
+                    <span class="phase-badge">Divergent Thinking</span>
+                </div>
+                <div class="card-body">
+                    <div class="concept-block">
+                        <div class="concept-title">功能描述</div>
+                        <p style="color: #cbd5e1; font-size: 0.95rem;">
+                            <strong>发散思维阶段</strong>。基于同一套世界模型，生成多个互斥或并行的投资假设（Scenario Analysis）。例如：乐观剧本 vs 悲观剧本。
+                        </p>
+                    </div>
+                    <div class="code-block">
+[
+  {
+    "plan_id": "Plan_A_Aggressive",
+    "hypothesis": "技术突破引发估值重塑",
+    "confidence_level": 0.8,
+    "pros": [...],
+    "cons": [...]
+  },
+  ...
+]
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 决策 -->
+            <div class="detail-card">
+                <div class="card-header">
+                    <div class="card-title"><span style="font-size: 1.5rem;">⚖️</span> 4. 决策 (Decision)</div>
+                    <span class="phase-badge">Convergent Thinking</span>
+                </div>
+                <div class="card-body">
+                    <div class="concept-block">
+                        <div class="concept-title">功能描述</div>
+                        <p style="color: #cbd5e1; font-size: 0.95rem;">
+                            <strong>收敛思维阶段</strong>。扮演"投决会主席"角色，评估所有候选方案的风险收益比，拍板选定唯一的执行路径。
+                        </p>
+                    </div>
+                    <div class="code-block">
+{
+  "selected_plan_id": "Plan_A_Aggressive",
+  "investment_thesis": "最终的核心投资逻辑...",
+  "risk_assessment": "综合风险评估...",
+  "recommendation": "超配/标配/低配",
+  "timeframe": "6-12个月"
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技术实现对比 -->
+    <section>
+        <div class="section-header">
+            <h2 class="section-title">LangGraph 架构优势</h2>
+        </div>
+        
+        <div class="detail-card">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th width="30%">特性维度</th>
+                        <th width="35%">传统脚本 / Chain</th>
+                        <th width="35%" style="color: #60a5fa;">LangGraph 状态机</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>流程控制</strong></td>
+                        <td>隐式，难以通过代码直观看到全貌</td>
+                        <td><span class="check-icon">✔</span> 显式图结构 (Nodes & Edges)，支持可视化</td>
+                    </tr>
+                    <tr>
+                        <td><strong>状态管理</strong></td>
+                        <td>参数在函数间透传，容易混乱</td>
+                        <td><span class="check-icon">✔</span> 统一 State Schema (TypedDict)，类型安全</td>
+                    </tr>
+                    <tr>
+                        <td><strong>断点/持久化</strong></td>
+                        <td>困难，通常需重新运行</td>
+                        <td><span class="check-icon">✔</span> 原生支持 Checkpoint，可保存中间状态</td>
+                    </tr>
+                    <tr>
+                        <td><strong>调试难度</strong></td>
+                        <td>出错难定位具体步骤上下文</td>
+                        <td><span class="check-icon">✔</span> 每个节点输出可独立观测</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <footer>
+        <p>Generated by Trae AI · Based on Deep Research Agent Architecture</p>
+    </footer>
+</div>
+
+</body>
+</html>
