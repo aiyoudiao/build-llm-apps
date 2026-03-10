@@ -118,5 +118,17 @@
   - **服务发现**：通过 `/.well-known/agent.json` 暴露能力名片，实现 Agent 互联。
   - **自动化决策**：构建“篮球活动决策代理”，自动发现并调用“天气代理”进行业务决策。
 
+### [Day 10: 多架构智能体 (Multi-Architecture Agents)](./day10/README.md)
+从反应式 (Reactive) 到深思熟虑 (Deliberative)，再到混合架构 (Hybrid) 的系统级智能体实战。
+
+> 🔗 **传送门**：[点击查看 Day 10 详细文档与代码](./day10/README.md)
+
+- **Reactive Agent (反应式)**：
+  - **私募合规助手**：基于 LangChain 0.3.x / LangGraph 1.0+ 构建 ReAct Agent，精准查询法规，内置防幻觉机制。
+- **Deliberative Agent (深思熟虑)**：
+  - **深度投研智能体**：基于 Qwen-Agent / LangGraph 模拟分析师 SOP（感知→建模→推理→决策→报告），生成专业研报。
+- **Hybrid Agent (混合架构)**：
+  - **智能财富投顾**：构建三层架构系统，通过协调层自动判断意图，灵活切换“快思考”（查行情）与“慢思考”（做规划）模式。
+
 ---
-*Last updated: 2026-03-09*
+*Last updated: 2026-03-11*
