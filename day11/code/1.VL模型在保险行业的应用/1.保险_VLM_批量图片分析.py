@@ -48,8 +48,10 @@ OSS_BASE_URL = "https://vl-image.oss-cn-shanghai.aliyuncs.com/"
 # 图片默认后缀
 IMAGE_SUFFIX = ".jpg"
 # 输入/输出文件名
-INPUT_FILE = './files/prompt_template_cn.xlsx'
-OUTPUT_FILE = './files/prompt_template_cn_result.xlsx'
+# INPUT_FILE = './files/prompt_template_cn.xlsx'
+# OUTPUT_FILE = './files/prompt_template_cn_result.xlsx'
+INPUT_FILE = './files/prompt_template_en.xlsx'
+OUTPUT_FILE = './files/prompt_template_en_result.xlsx'
 
 # ================= 初始化客户端 =================
 def init_client():
