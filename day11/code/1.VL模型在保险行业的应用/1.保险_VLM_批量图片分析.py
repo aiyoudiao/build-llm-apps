@@ -42,14 +42,14 @@ load_dotenv()
 
 # ================= 配置常量 =================
 # 模型名称：使用通义千问视觉最大版，适合复杂场景分析
-MODEL_NAME = "qwen-vl-max" 
+MODEL_NAME = "qwen-vl-max"  # qwen-vl-max-2025-08-13
 # 图片存储前缀：阿里云 OSS 地址 (上海区域)
 OSS_BASE_URL = "https://vl-image.oss-cn-shanghai.aliyuncs.com/"
 # 图片默认后缀
 IMAGE_SUFFIX = ".jpg"
 # 输入/输出文件名
-INPUT_FILE = './prompt_template_cn.xlsx'
-OUTPUT_FILE = './prompt_template_cn_result.xlsx'
+INPUT_FILE = './files/prompt_template_cn.xlsx'
+OUTPUT_FILE = './files/prompt_template_cn_result.xlsx'
 
 # ================= 初始化客户端 =================
 def init_client():

@@ -41,7 +41,7 @@ load_dotenv()
 MODEL_NAME = 'qwen-vl-plus'
 # 本地图片路径 (使用 file:// 协议标识本地文件)
 # 注意：请确保该文件在当前运行目录下存在
-IMAGE_FILE_NAME = '1-Chinese-document-extraction.jpg'
+IMAGE_FILE_NAME = './images/1-Chinese-document-extraction.jpg'
 LOCAL_IMAGE_PATH = f'file://{IMAGE_FILE_NAME}'
 # 用户提示词
 USER_PROMPT = '图片里有什么东西?'
